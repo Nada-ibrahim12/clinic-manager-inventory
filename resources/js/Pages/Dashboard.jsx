@@ -1,19 +1,195 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { Head } from "@inertiajs/react";
 
-export default function Dashboard(props) {
+export default function Dashboard({ auth, errors }) {
     return (
         <AuthenticatedLayout
-            auth={props.auth}
-            errors={props.errors}
-            header={<h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">Dashboard</h2>}
+            auth={auth}
+            errors={errors}
+            header={
+                <h2 className="text-2xl font-bold text-gray-800">
+                    Clinic Dashboard
+                </h2>
+            }
         >
             <Head title="Dashboard" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900 dark:text-gray-100">You're logged in!</div>
+            <div className="py-8 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto space-y-6">
+                    {/* Welcome Card */}
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                        <div className="p-6 md:p-8">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0 bg-indigo-100 p-3 rounded-lg">
+                                    <svg
+                                        className="h-8 w-8 text-indigo-600"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                        />
+                                    </svg>
+                                </div>
+                                <div className="ml-4">
+                                    <h3 className="text-lg font-medium text-gray-900">
+                                        Welcome back, {auth.user.name}!
+                                    </h3>
+                                    <p className="text-gray-500">
+                                        Here's what's happening with your clinic
+                                        today.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                        {/* Inventory Status */}
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0 bg-blue-100 p-2 rounded-md">
+                                        <svg
+                                            className="h-6 w-6 text-blue-600"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-4">
+                                        <h3 className="text-sm font-medium text-gray-500">
+                                            Total Inventory
+                                        </h3>
+                                        <p className="text-2xl font-semibold text-gray-900">
+                                            1,248
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Low Stock Items */}
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-md">
+                                        <svg
+                                            className="h-6 w-6 text-yellow-600"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-4">
+                                        <h3 className="text-sm font-medium text-gray-500">
+                                            Low Stock Items
+                                        </h3>
+                                        <p className="text-2xl font-semibold text-gray-900">
+                                            24
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Expiring Soon */}
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0 bg-red-100 p-2 rounded-md">
+                                        <svg
+                                            className="h-6 w-6 text-red-600"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-4">
+                                        <h3 className="text-sm font-medium text-gray-500">
+                                            Expiring Soon
+                                        </h3>
+                                        <p className="text-2xl font-semibold text-gray-900">
+                                            12
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Recent Orders */}
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                            <div className="p-5">
+                                <div className="flex items-center">
+                                    <div className="flex-shrink-0 bg-green-100 p-2 rounded-md">
+                                        <svg
+                                            className="h-6 w-6 text-green-600"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                                            />
+                                        </svg>
+                                    </div>
+                                    <div className="ml-4">
+                                        <h3 className="text-sm font-medium text-gray-500">
+                                            Recent Orders
+                                        </h3>
+                                        <p className="text-2xl font-semibold text-gray-900">
+                                            8
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Recent Activity Section */}
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                        <div className="px-6 py-5 border-b border-gray-100">
+                            <h3 className="text-lg font-medium text-gray-900">
+                                Recent Activity
+                            </h3>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                            {/* Activity items would go here */}
+                            <div className="p-6">
+                                <p className="text-gray-500 text-center">
+                                    No recent activity
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
