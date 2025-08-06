@@ -14,11 +14,12 @@ class User extends Authenticatable
     use Notifiable;
 
     protected $table = 'users';
+    public $timestamps = false;
 
     protected $fillable = [
         'name',
         'email',
-        'password_hash',
+        'password',
         'role',
         'is_active',
         'last_login_at',
@@ -27,11 +28,10 @@ class User extends Authenticatable
     protected $casts = [
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
-        'created_at' => 'datetime',
     ];
 
     protected $hidden = [
-        'password_hash',
+        'password',
     ];
 
 

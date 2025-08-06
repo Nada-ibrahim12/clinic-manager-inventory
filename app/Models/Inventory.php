@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Inventory extends Model
 {
+    protected $table = 'inventory';
     protected $fillable = ['item_id', 'quantity', 'location', 'last_updated', 'updated_by'];
 
     public function item()

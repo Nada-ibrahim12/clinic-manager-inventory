@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PurchaseInvoice extends Model
 {
+    protected $table = 'purchase_invoices';
     protected $fillable = ['supplier_id', 'invoice_number', 'date', 'total_amount', 'created_by'];
 
     public function supplier()
