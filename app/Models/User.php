@@ -23,11 +23,13 @@ class User extends Authenticatable
         'role',
         'is_active',
         'last_login_at',
+        'remember_token'
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'last_login_at' => 'datetime',
+        'remember_token' => 'string',
     ];
 
     protected $hidden = [
