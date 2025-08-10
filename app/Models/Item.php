@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Category;
-
+use Ramsey\Uuid\Uuid;
 class Item extends Model
 {
+
     protected $table = 'items';
+    protected $primaryKey = 'item_id';
     protected $fillable = [
         'name',
         'description',
@@ -22,9 +23,14 @@ class Item extends Model
         'updated_at'
     ];
 
+    protected $casts = [
+        'selling_price' => 'float',
+        'purchase_price' => 'float',
+    ];
+
     public function category()
     {
-        return $this->belongsTo(ItemCategory::class);
+        return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
     public function transactions()

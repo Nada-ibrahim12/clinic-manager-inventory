@@ -8,16 +8,10 @@ use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\PurchaseInvoiceController;
-use App\Http\Controllers\ReportController; // Add this new controller
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ItemTransactionController;
+use App\Http\Controllers\CategoryController;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Routes for your web interface (Inertia + React).
-|
-*/
 
 // Redirect root "/" to login if not authenticated
 Route::get('/', function () {
@@ -29,38 +23,49 @@ Route::get('/', function () {
     ]);
 });
 
+// Dashboard
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// Protected Routes (only for authenticated users)
 Route::middleware(['auth'])->group(function () {
-    // Profile routes
+    // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Inventory Management Routes
-    Route::resource('inventories', InventoryController::class);
-    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory'); // Added for navbar
+    // Inventory
+    Route::resource('inventories', InventoryController::class)->names([
+        'index' => 'inventories.index',
+        'create' => 'inventories.create',
+        'store' => 'inventories.store',
+        'edit' => 'inventories.edit',
+        'update' => 'inventories.update',
+        'destroy' => 'inventories.destroy',
+        'show' => 'inventories.show',
+    ]);
 
-    // Item Management Routes
+    // Items
     Route::resource('items', ItemController::class);
-    Route::get('/items', [ItemController::class, 'index'])->name('items.index');
-    Route::get('items/create', [ItemController::class, 'create'])->name('items.create');
-    Route::post('items/store', [ItemController::class, 'store'])->name('items.store');
 
-    // Supplier Management
+
+    Route::apiResource('categories', CategoryController::class);
+
+
+    // Suppliers
     Route::resource('suppliers', SupplierController::class);
 
-    // Purchase Invoices
-    Route::resource('purchase-invoices', PurchaseInvoiceController::class);
+    // Invoices
+    Route::get('/invoices', [PurchaseInvoiceController::class, 'index'])->name('invoices.index');
 
-    // Reports - Added new controller for reports
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports');
+    // Reports
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/inventory', [ReportController::class, 'inventory'])->name('reports.inventory');
     Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
+
+    // Transactions
+    Route::get('/transactions', [ItemTransactionController::class, 'index'])->name('transactions.index');
 });
 
-// Auth routes (login, register, etc.)
+// Auth routes
 require __DIR__ . '/auth.php';

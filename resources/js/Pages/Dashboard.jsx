@@ -1,5 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head } from "@inertiajs/react";
+import NavLink from "@/Components/NavLink";
 
 export default function Dashboard({ auth, errors }) {
     return (
@@ -7,9 +8,80 @@ export default function Dashboard({ auth, errors }) {
             auth={auth}
             errors={errors}
             header={
-                <h2 className="text-2xl font-bold text-gray-800">
-                    Clinic Dashboard
-                </h2>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <NavLink
+                        href={route("dashboard")}
+                        active={route().current("dashboard")}
+                        className={({ active }) =>
+                            `whitespace-nowrap px-4 py-2 rounded-md transition-all duration-200 text-md ${
+                                active
+                                    ? "bg-white shadow-sm text-indigo-600 font-medium"
+                                    : "text-gray-600 hover:text-gray-800"
+                            }`
+                        }
+                    >
+                        <h2>Dashboard</h2>
+                    </NavLink>
+
+                    <div className="w-full sm:w-auto overflow-x-auto scrollbar-hide">
+                        <NavLink
+                            href={route("items.index")}
+                            active={route().current("items.index")}
+                            className={({ active }) =>
+                                `whitespace-nowrap px-4 py-2 rounded-md transition-all duration-200 text-md ${
+                                    active
+                                        ? "bg-white shadow-sm text-indigo-600 font-medium border-gray-200"
+                                        : "text-gray-600 hover:text-gray-800"
+                                }`
+                            }
+                        >
+                            Items
+                        </NavLink>
+
+                        <NavLink
+                            href={route("suppliers.index")}
+                            active={route().current("suppliers.index")}
+                            className={({ active }) =>
+                                `whitespace-nowrap px-4 py-2 rounded-md transition-all duration-200  text-md${
+                                    active
+                                        ? "bg-white shadow-sm text-indigo-600 font-medium border-gray-200"
+                                        : "text-gray-600 hover:text-gray-800"
+                                }`
+                            }
+                        >
+                            Suppliers
+                        </NavLink>
+
+                        <NavLink
+                            href={route("transactions.index")}
+                            active={route().current("transactions.index")}
+                            className={({ active }) =>
+                                `whitespace-nowrap px-4 py-2 rounded-md transition-all duration-200 text-md ${
+                                    active
+                                        ? "bg-white shadow-sm text-indigo-600 font-medium border-gray-200"
+                                        : "text-gray-600 hover:text-gray-800"
+                                }`
+                            }
+                        >
+                            Transactions
+                        </NavLink>
+
+                        <NavLink
+                            href={route("invoices.index")}
+                            active={route().current("invoices.index")}
+                            className={({ active }) =>
+                                `whitespace-nowrap px-4 py-2 rounded-md transition-all duration-200 text-md ${
+                                    active
+                                        ? "bg-white shadow-sm text-indigo-600 font-medium border-gray-200"
+                                        : "text-gray-600 hover:text-gray-800"
+                                }`
+                            }
+                        >
+                            Invoices
+                        </NavLink>
+                    </div>
+                    {/* </div> */}
+                </div>
             }
         >
             <Head title="Dashboard" />
@@ -17,7 +89,7 @@ export default function Dashboard({ auth, errors }) {
             <div className="py-8 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-7xl mx-auto space-y-6">
                     {/* Welcome Card */}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border-gray-100">
                         <div className="p-6 md:p-8">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0 bg-indigo-100 p-3 rounded-lg">
@@ -49,9 +121,9 @@ export default function Dashboard({ auth, errors }) {
                     </div>
 
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 lg:grid-cols-3">
                         {/* Inventory Status */}
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border-gray-100">
                             <div className="p-5">
                                 <div className="flex items-center">
                                     <div className="flex-shrink-0 bg-blue-100 p-2 rounded-md">
@@ -71,7 +143,7 @@ export default function Dashboard({ auth, errors }) {
                                     </div>
                                     <div className="ml-4">
                                         <h3 className="text-sm font-medium text-gray-500">
-                                            Total Inventory
+                                            Total products in inventory
                                         </h3>
                                         <p className="text-2xl font-semibold text-gray-900">
                                             1,248
@@ -82,7 +154,7 @@ export default function Dashboard({ auth, errors }) {
                         </div>
 
                         {/* Low Stock Items */}
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border-gray-100">
                             <div className="p-5">
                                 <div className="flex items-center">
                                     <div className="flex-shrink-0 bg-yellow-100 p-2 rounded-md">
@@ -112,39 +184,8 @@ export default function Dashboard({ auth, errors }) {
                             </div>
                         </div>
 
-                        {/* Expiring Soon */}
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
-                            <div className="p-5">
-                                <div className="flex items-center">
-                                    <div className="flex-shrink-0 bg-red-100 p-2 rounded-md">
-                                        <svg
-                                            className="h-6 w-6 text-red-600"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div className="ml-4">
-                                        <h3 className="text-sm font-medium text-gray-500">
-                                            Expiring Soon
-                                        </h3>
-                                        <p className="text-2xl font-semibold text-gray-900">
-                                            12
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Recent Orders */}
-                        <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                        <div className="bg-white rounded-xl shadow-md overflow-hidden border-gray-100">
                             <div className="p-5">
                                 <div className="flex items-center">
                                     <div className="flex-shrink-0 bg-green-100 p-2 rounded-md">
@@ -176,14 +217,13 @@ export default function Dashboard({ auth, errors }) {
                     </div>
 
                     {/* Recent Activity Section */}
-                    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100">
+                    <div className="bg-white rounded-xl shadow-md overflow-hidden border-gray-100">
                         <div className="px-6 py-5 border-b border-gray-100">
                             <h3 className="text-lg font-medium text-gray-900">
                                 Recent Activity
                             </h3>
                         </div>
                         <div className="divide-y divide-gray-100">
-                            {/* Activity items would go here */}
                             <div className="p-6">
                                 <p className="text-gray-500 text-center">
                                     No recent activity

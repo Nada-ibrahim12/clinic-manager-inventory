@@ -47,7 +47,7 @@ export default function Authenticated({ auth, header, children }) {
                                 <NavLink
                                     href={route("dashboard")}
                                     active={route().current("dashboard")}
-                                    className="text-gray-700 hover:text-indigo-600"
+                                    className="text-gray-800 hover:text-indigo-600"
                                 >
                                     Dashboard
                                 </NavLink>
@@ -84,7 +84,7 @@ export default function Authenticated({ auth, header, children }) {
                                         <span className="inline-flex rounded-md">
                                             <button
                                                 type="button"
-                                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:text-indigo-600 focus:outline-none transition"
+                                                className="inline-flex items-center px-3 py-2 border border-transparent text-md leading-4 font-medium rounded-md text-gray-700 bg-white hover:text-indigo-600 focus:outline-none transition"
                                             >
                                                 {auth.user.name}
                                                 <svg

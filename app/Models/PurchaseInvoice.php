@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseInvoice extends Model
 {
     protected $table = 'purchase_invoices';
-    protected $fillable = ['supplier_id', 'invoice_number', 'date', 'total_amount', 'created_by'];
+    protected $fillable = ['supplier_id', 'invoice_number', 'invoice_date', 'total_amount', 'user_id'];
 
     public function supplier()
     {
