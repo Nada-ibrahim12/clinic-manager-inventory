@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseInvoiceItem extends Model
 {
     protected $table = 'purchase_invoice_items';
+
     protected $fillable = ['purchase_invoice_id', 'item_id', 'quantity', 'unit_price'];
 
     public function item()

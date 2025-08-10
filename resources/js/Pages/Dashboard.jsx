@@ -67,8 +67,8 @@ export default function Dashboard({ auth, errors }) {
                         </NavLink>
 
                         <NavLink
-                            href={route("invoices.index")}
-                            active={route().current("invoices.index")}
+                            href={route("purchase-invoices.index")}
+                            active={route().current("purchase-invoices.index")}
                             className={({ active }) =>
                                 `whitespace-nowrap px-4 py-2 rounded-md transition-all duration-200 text-md ${
                                     active

@@ -11,6 +11,7 @@ use App\Http\Controllers\PurchaseInvoiceController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ItemTransactionController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PurchaseInvoiceItemController;
 
 
 // Redirect root "/" to login if not authenticated
@@ -56,7 +57,10 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('suppliers', SupplierController::class);
 
     // Invoices
-    Route::get('/invoices', [PurchaseInvoiceController::class, 'index'])->name('invoices.index');
+    Route::resource('/purchase-invoices', PurchaseInvoiceController::class);
+    
+
+    Route::resource('/purchase-invoice-items', PurchaseInvoiceItemController::class);
 
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
