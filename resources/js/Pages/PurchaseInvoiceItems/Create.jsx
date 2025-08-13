@@ -32,7 +32,7 @@ export default function Create({
             if (i === index) {
                 if (field === "item_id") {
                     const selectedItem = items.find(
-                        (it) => String(it.id) === String(value)
+                        (it) => String(it.item_id) === String(value)
                     );
                     return {
                         ...item,

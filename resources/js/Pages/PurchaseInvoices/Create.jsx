@@ -165,7 +165,7 @@ export default function Create({ suppliers, items, auth, errors }) {
                                     <span className="col-span-2 p-2 border rounded">
                                         {items.find(
                                             (i) => i.id === itemRow.item_id
-                                        )?.itemRow.name || "Unknown Item"}
+                                        )?.name || "Unknown Item"}
                                     </span>
                                     <span className="col-span-1 p-2 border rounded">
                                         {itemRow.quantity}
