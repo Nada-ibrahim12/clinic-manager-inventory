@@ -9,10 +9,12 @@ class PurchaseInvoice extends Model
 {
     protected $table = 'purchase_invoices';
     protected $primaryKey = 'invoice_number';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     public $timestamps = false;
 
-    protected $fillable = ['supplier_id', 'invoice_number', 'invoice_date', 'total_amount', 'created_by'];
+    protected $fillable = ['supplier_id', 'invoice_date', 'total_amount', 'created_by'];
 
     public function supplier()
     {
@@ -23,8 +25,6 @@ class PurchaseInvoice extends Model
     {
         return $this->hasMany(PurchaseInvoiceItem::class, 'purchase_invoice_id', 'invoice_number');
     }
-
-
 
     public function creator()
     {

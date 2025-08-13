@@ -10,17 +10,23 @@ export default function Create({ suppliers, items, auth, errors }) {
         invoice_date: new Date().toISOString().slice(0, 10),
         invoice_items: [],
         total_amount: 0,
-        status: "pending",
+        status: "paid",
     });
+
+    useEffect(() => {
+        const savedItems = JSON.parse(
+            localStorage.getItem("purchaseInvoiceItems")
+        );
+        console.log("Saved items:", savedItems);
+    }, []);
+
 
     useEffect(() => {
         const savedItems = localStorage.getItem("purchaseInvoiceItems");
         if (savedItems) {
             let parsedItems = JSON.parse(savedItems);
-
-            // Fix item_id if it is a string (name), convert to numeric ID using 'items'
             parsedItems = parsedItems.map((item) => {
-                if (typeof item.item_id === "string") {
+                if (typeof item.item_id === "number") {
                     const found = items.find((i) => i.name === item.item_id);
                     if (found) {
                         return { ...item, item_id: found.id };
@@ -32,9 +38,8 @@ export default function Create({ suppliers, items, auth, errors }) {
             setData("invoice_items", parsedItems);
             localStorage.removeItem("purchaseInvoiceItems");
         }
-    }, [items]); // Add 'items' as dependency because you use it inside
+    }, [items]);
 
-    // Calculate total amount whenever invoice_items changes
     useEffect(() => {
         const total = data.invoice_items.reduce((sum, item) => {
             const qty = parseFloat(item.quantity) || 0;
@@ -56,8 +61,11 @@ export default function Create({ suppliers, items, auth, errors }) {
     };
 
     const submit = (e) => {
+        console.log(data.invoice_items);
         e.preventDefault();
-        post(route("purchase-invoices.store"));
+        post(route("purchase-invoices.store"), {
+            preserveScroll: true,
+        });
     };
 
     return (
@@ -157,7 +165,7 @@ export default function Create({ suppliers, items, auth, errors }) {
                                     <span className="col-span-2 p-2 border rounded">
                                         {items.find(
                                             (i) => i.id === itemRow.item_id
-                                        )?.name || "Unknown Item"}
+                                        )?.itemRow.name || "Unknown Item"}
                                     </span>
                                     <span className="col-span-1 p-2 border rounded">
                                         {itemRow.quantity}

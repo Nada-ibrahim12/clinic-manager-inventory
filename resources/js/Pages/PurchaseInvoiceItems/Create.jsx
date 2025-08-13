@@ -66,6 +66,7 @@ export default function Create({
             "purchaseInvoiceItems",
             JSON.stringify(data.invoice_items)
         );
+        console.log(data.invoice_items);
         Inertia.visit(route("purchase-invoices.create"));
     };
 
@@ -119,8 +120,8 @@ export default function Create({
                                         <option value="">Select Item</option>
                                         {items.map((item) => (
                                             <option
-                                                key={item.id}
-                                                value={item.id}
+                                                key={item.item_id}
+                                                value={item.item_id}
                                             >
                                                 {item.name}
                                             </option>

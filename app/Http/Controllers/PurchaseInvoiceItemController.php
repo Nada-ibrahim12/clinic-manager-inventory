@@ -35,20 +35,20 @@ class PurchaseInvoiceItemController extends Controller
     }
 
     // Store new purchase invoice item(s)
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'purchase_invoice_id' => 'required|exists:purchase_invoices,id',
-            'item_id' => 'required|exists:items,id',
-            'quantity' => 'required|integer|min:1',
-            'unit_price' => 'required|numeric|min:0',
-        ]);
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'purchase_invoice_id' => 'required|exists:purchase_invoices,invoice_number',
+    //         'item_id' => 'required|exists:items,id',
+    //         'quantity' => 'required|integer|min:1',
+    //         'unit_price' => 'required|numeric|min:0',
+    //     ]);
 
-        PurchaseInvoiceItem::create($validated);
+    //     PurchaseInvoiceItem::create($validated);
 
-        return redirect()->route('purchase-invoice-items.index')
-            ->with('success', 'Purchase invoice item added successfully.');
-    }
+    //     return redirect()->route('purchase-invoice-items.index')
+    //         ->with('success', 'Purchase invoice item added successfully.');
+    // }
 
     // Show single purchase invoice item details
     public function show(PurchaseInvoiceItem $purchaseInvoiceItem)

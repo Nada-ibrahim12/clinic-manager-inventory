@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use App\Models\PurchaseInvoice;
 use App\Models\Item;
+use App\Models\PurchaseInvoiceItem;
 
 class PurchaseInvoiceController extends Controller
 {
@@ -33,7 +34,7 @@ class PurchaseInvoiceController extends Controller
         $suppliers = DB::table('suppliers')
             ->select('supplier_id', 'name')
             ->get();
-            $items = Item::all(); 
+        $items = Item::all();
         return Inertia::render('PurchaseInvoices/Create', [
             'suppliers' => $suppliers,
             'items' => $items,
@@ -57,9 +58,29 @@ class PurchaseInvoiceController extends Controller
 
         $validated['created_by'] = auth()->user()->id;
 
+        // $this->storeInvoiceItems($request->invoice_items, $validated['invoice_number']);
         $invoice = PurchaseInvoice::create($validated);
+        $this->storeInvoiceItems($invoice->invoice_number, $request->invoice_items);
 
         return redirect()->route('purchase-invoices.index')->with('success', 'Purchase Invoice created successfully');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    private function storeInvoiceItems($invoiceNumber, $items)
+    {
+        foreach ($items as $item) {
+            PurchaseInvoiceItem::create([
+                'purchase_invoice_id' => $invoiceNumber,
+                'item_id'        => $item['item_id'],
+                'quantity'       => $item['quantity'],
+                'unit_price'          => $item['unit_price'],
+            ]);
+        }
     }
 
 

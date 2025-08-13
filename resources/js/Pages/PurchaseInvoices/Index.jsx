@@ -1,10 +1,18 @@
 import React from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
+
 
 
 export default function Index({ auth, errors, invoices }) {
     console.log(invoices);
+
+    const deleteInvoice = (id) => {
+            if (confirm("Are you sure you want to delete this invoice?")) {
+                router.delete(route("purchase-invoices.destroy", id));
+            }
+        };
 
     return (
         <AuthenticatedLayout
@@ -42,7 +50,9 @@ export default function Index({ auth, errors, invoices }) {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Total
                                 </th>
-                                <th className="px-6 py-3"></th>
+                                <th className="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -78,7 +88,7 @@ export default function Index({ auth, errors, invoices }) {
                                                 invoice.total_amount
                                             ).toFixed(2)}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                             <Link
                                                 href={route(
                                                     "purchase-invoices.show",
@@ -87,10 +97,18 @@ export default function Index({ auth, errors, invoices }) {
                                                             invoice.invoice_number,
                                                     }
                                                 )}
-                                                className="text-indigo-600 hover:text-indigo-900"
+                                                className="text-indigo-600 hover:text-indigo-900 m-1"
                                             >
                                                 View
                                             </Link>
+                                            <button
+                                                onClick={() =>
+                                                    deleteInvoice(invoice.invoice_number)
+                                                }
+                                                className="text-red-600 hover:text-red-900 m-1"
+                                            >
+                                                Delete
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
