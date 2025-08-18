@@ -73,7 +73,7 @@ export default function Show({ auth, errors, invoice }) {
                                 {invoice.items?.map((item) => (
                                     <tr key={item.id}>
                                         <td className="border border-gray-300 px-4 py-2">
-                                            {item.name}
+                                            {item.item?.name}
                                         </td>
                                         <td className="border border-gray-300 px-4 py-2">
                                             {item.quantity}

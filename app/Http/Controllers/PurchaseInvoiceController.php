@@ -92,7 +92,7 @@ class PurchaseInvoiceController extends Controller
      */
     public function show($id)
     {
-        $invoice = PurchaseInvoice::with(['supplier', 'items'])->findOrFail($id);
+        $invoice = PurchaseInvoice::with(['supplier', 'items.item'])->findOrFail($id);
         return Inertia::render('PurchaseInvoices/Show', [
             'invoice' => $invoice,
         ]);

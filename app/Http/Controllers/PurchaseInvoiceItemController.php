@@ -51,12 +51,13 @@ class PurchaseInvoiceItemController extends Controller
     // }
 
     // Show single purchase invoice item details
-    public function show(PurchaseInvoiceItem $purchaseInvoiceItem)
+    public function show($id)
     {
-        $purchaseInvoiceItem->load('item');
+        // Eager-load the 'item' relationship
+        $invoiceItem = PurchaseInvoiceItem::with('item')->findOrFail($id);
 
         return Inertia::render('PurchaseInvoiceItems/Show', [
-            'item' => $purchaseInvoiceItem,
+            'invoiceItem' => $invoiceItem,
         ]);
     }
 
