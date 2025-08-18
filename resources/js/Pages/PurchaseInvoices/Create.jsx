@@ -25,17 +25,24 @@ export default function Create({ suppliers, items, auth, errors }) {
         const savedItems = localStorage.getItem("purchaseInvoiceItems");
         if (savedItems) {
             let parsedItems = JSON.parse(savedItems);
-            parsedItems = parsedItems.map((item) => {
-                if (typeof item.item_id === "number") {
-                    const found = items.find((i) => i.name === item.item_id);
-                    if (found) {
-                        return { ...item, item_id: found.id };
-                    }
+
+            const updatedItems = parsedItems.map((item) => {
+                // The item_id from localStorage is a string. Convert it to a number.
+                const itemIdAsNumber = Number(item.item_id);
+
+                // Find the item in the 'items' prop using the correct key: item_id
+                const found = items.find((i) => i.item_id === itemIdAsNumber);
+
+                console.log("Looking for ID:", itemIdAsNumber);
+                console.log("Found item:", found);
+
+                if (found) {
+                    return { ...item, item_id: found.item_id };
                 }
                 return item;
             });
 
-            setData("invoice_items", parsedItems);
+            setData("invoice_items", updatedItems);
             localStorage.removeItem("purchaseInvoiceItems");
         }
     }, [items]);
@@ -164,7 +171,9 @@ export default function Create({ suppliers, items, auth, errors }) {
                                 >
                                     <span className="col-span-2 p-2 border rounded">
                                         {items.find(
-                                            (i) => i.id === itemRow.item_id
+                                            (i) =>
+                                                i.item_id ===
+                                                Number(itemRow.item_id)
                                         )?.name || "Unknown Item"}
                                     </span>
                                     <span className="col-span-1 p-2 border rounded">
