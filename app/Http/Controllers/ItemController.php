@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Models\Item;
 use App\Models\ItemCategory;
 use Illuminate\Support\Facades\DB;
+use App\Models\ItemTransaction;
 
 class ItemController extends Controller
 {
@@ -151,4 +152,16 @@ class ItemController extends Controller
         $item->delete();
         return redirect()->route('items.index')->with('success', 'Item deleted successfully.');
     }
+
+    public function indexAllTransactions()
+    {
+        $transactions = ItemTransaction::with(['item', 'creator'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('Transactions/Index', [
+            'transactions' => $transactions,
+        ]);
+    }
 }
+

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\PurchaseInvoice;
 use App\Models\Item;
 use App\Models\PurchaseInvoiceItem;
+use App\Models\ItemTransaction;
 
 class PurchaseInvoiceController extends Controller
 {
@@ -84,6 +85,14 @@ class PurchaseInvoiceController extends Controller
             if ($inventoryItem) {
                 $inventoryItem->quantity += $item['quantity'];
                 $inventoryItem->save();
+
+                ItemTransaction::create([
+                    'item_id' => $item['item_id'],
+                    'transaction_type' => 'in',
+                    'quantity_change' => $item['quantity'],
+                    'created_by' => auth()->user()->id,
+                    'quantity' => $inventoryItem->quantity,
+                ]);
             }
         }
     }

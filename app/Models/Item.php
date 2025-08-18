@@ -33,7 +33,7 @@ class Item extends Model
         return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
-    public function transactions()
+    public function itemTransactions()
     {
         return $this->hasMany(ItemTransaction::class);
     }

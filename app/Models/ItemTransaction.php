@@ -14,6 +14,7 @@ class ItemTransaction extends Model
         'item_id',
         'quantity_change',
         'transaction_type',
+        'quantity',
         'created_by',
         'created_at'
     ];

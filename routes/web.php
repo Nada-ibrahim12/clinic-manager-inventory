@@ -68,7 +68,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/sales', [ReportController::class, 'sales'])->name('reports.sales');
 
     // Transactions
-    Route::get('/transactions', [ItemTransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions', [ItemController::class, 'indexAllTransactions'])->name('transactions.index');
 });
 
 // Auth routes
