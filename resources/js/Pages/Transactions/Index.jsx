@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useEffect } from "react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 import Pagination from "@/Components/Pagination";
 
 export default function AllTransactions({ auth, errors, transactions }) {
+    useEffect(() => {
+        console.log(transactions);
+    }, [transactions]);
+
     return (
         <AuthenticatedLayout
             auth={auth}

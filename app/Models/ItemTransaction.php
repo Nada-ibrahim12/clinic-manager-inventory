@@ -9,6 +9,8 @@ class ItemTransaction extends Model
 {
     protected $table = 'item_transactions';
     public $timestamps = false;
+    protected $primaryKey = 'transaction_id';
+
 
     protected $fillable = [
         'item_id',
@@ -21,7 +23,7 @@ class ItemTransaction extends Model
 
     public function item()
     {
-        return $this->belongsTo(Item::class);
+        return $this->belongsTo(Item::class, 'item_id', 'item_id');
     }
 
     public function creator()
