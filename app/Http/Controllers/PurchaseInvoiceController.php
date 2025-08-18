@@ -80,6 +80,11 @@ class PurchaseInvoiceController extends Controller
                 'quantity'       => $item['quantity'],
                 'unit_price'          => $item['unit_price'],
             ]);
+            $inventoryItem = Item::find($item['item_id']);
+            if ($inventoryItem) {
+                $inventoryItem->quantity += $item['quantity'];
+                $inventoryItem->save();
+            }
         }
     }
 
