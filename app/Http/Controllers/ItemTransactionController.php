@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\ItemTransaction;
+use Inertia\Inertia;
+use App\Models\Item;
 
 class ItemTransactionController extends Controller
 {
@@ -13,7 +16,26 @@ class ItemTransactionController extends Controller
      */
     public function index()
     {
-        //
+        $transactions = ItemTransaction::with(['item', 'creator'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('Transactions/Index', [
+            'transactions' => $transactions,
+        ]);
+    }
+
+    public function showByItem(Item $item)
+    {
+        $transactions = $item->transactions()
+            ->with('creator') 
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return Inertia::render('Transactions/ItemTransactions', [
+            'item' => $item,
+            'transactions' => $transactions,
+        ]);
     }
 
     /**
@@ -23,7 +45,7 @@ class ItemTransactionController extends Controller
      */
     public function create()
     {
-        //
+        return Inertia::render('Transactions/Create');
     }
 
     /**
@@ -34,7 +56,19 @@ class ItemTransactionController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'item_id' => 'required|exists:items,item_id',
+            'quantity_change' => 'required|integer',
+            'transaction_type' => 'required|string|in:purchase,sale,adjustment',
+            'quantity' => 'required|integer|min:0',
+        ]);
+
+        $validated['created_by'] = auth()->user()->id;
+        $validated['created_at'] = now();
+
+        ItemTransaction::create($validated);
+
+        return redirect()->route('transactions.index')->with('success', 'Transaction recorded successfully.');
     }
 
     /**
@@ -45,7 +79,11 @@ class ItemTransactionController extends Controller
      */
     public function show($id)
     {
-        //
+        $transaction = ItemTransaction::with(['item', 'creator'])
+            ->findOrFail($id);
+        return Inertia::render('Transactions/Show', [
+            'transaction' => $transaction
+        ]);
     }
 
     /**

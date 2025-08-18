@@ -19,7 +19,7 @@ class PurchaseInvoiceController extends Controller
      */
     public function index()
     {
-        $invoices = PurchaseInvoice::with('supplier')->paginate(10);
+        $invoices = PurchaseInvoice::with('supplier')->paginate(100);
         return Inertia::render('PurchaseInvoices/Index', [
             'invoices' => $invoices,
         ]);

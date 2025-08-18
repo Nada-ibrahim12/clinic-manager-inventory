@@ -14,6 +14,13 @@ export default function Show({ auth, errors, item }) {
                     </h2>
                     <div className="space-x-2">
                         <Link
+                            href={route("items.transactions", item.item_id)}
+                            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
+                        >
+                            Item Transactions
+                        </Link>
+
+                        <Link
                             href={route("items.edit", item.item_id)}
                             className="bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600"
                         >

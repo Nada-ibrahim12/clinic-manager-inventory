@@ -33,9 +33,9 @@ class Item extends Model
         return $this->belongsTo(ItemCategory::class, 'category_id');
     }
 
-    public function itemTransactions()
+    public function transactions()
     {
-        return $this->hasMany(ItemTransaction::class);
+        return $this->hasMany(ItemTransaction::class, 'item_id', 'item_id');
     }
 
     public function inventory()
