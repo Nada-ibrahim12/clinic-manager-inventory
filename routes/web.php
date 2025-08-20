@@ -12,6 +12,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ItemTransactionController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PurchaseInvoiceItemController;
+use App\Http\Controllers\TransferController;
 
 
 // Redirect root "/" to login if not authenticated
@@ -71,6 +72,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/transactions', [ItemController::class, 'indexAllTransactions'])->name('transactions.index');
     Route::get('/items/{item}/transactions', [ItemTransactionController::class, 'showByItem'])
         ->name('items.transactions');
+
+    // Transfer
+    Route::resource('transfer', TransferController::class);
 });
 
 // Auth routes

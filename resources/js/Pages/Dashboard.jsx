@@ -39,8 +39,8 @@ export default function Dashboard({ auth, errors }) {
                         </NavLink>
 
                         <NavLink
-                            href={route("suppliers.index")}
-                            active={route().current("suppliers.index")}
+                            href={route("transfer.index")}
+                            active={route().current("transfer.index")}
                             className={({ active }) =>
                                 `whitespace-nowrap px-4 py-2 rounded-md transition-all duration-200  text-md${
                                     active
@@ -49,7 +49,7 @@ export default function Dashboard({ auth, errors }) {
                                 }`
                             }
                         >
-                            Suppliers
+                            Transfer
                         </NavLink>
 
                         <NavLink

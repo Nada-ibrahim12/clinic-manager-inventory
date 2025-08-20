@@ -28,7 +28,7 @@ class ItemTransactionController extends Controller
     public function showByItem(Item $item)
     {
         $transactions = $item->transactions()
-            ->with('creator') 
+            ->with('creator')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
@@ -71,6 +71,38 @@ class ItemTransactionController extends Controller
         return redirect()->route('transactions.index')->with('success', 'Transaction recorded successfully.');
     }
 
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function storeOutTransaction(Request $request)
+    {
+        $validated = $request->validate([
+            'item_id' => 'required|exists:items,item_id',
+            'quantity_change' => 'required|integer',
+            'transaction_type' => 'required|string|out:purchase,sale,adjustment',
+            'quantity' => 'required|integer|min:0',
+        ]);
+
+        $item = Item::findOrFail($validated['item_id']);
+        if ($item) {
+            if ($item->quantity < $validated['quantity']) {
+                return redirect()->back()->withErrors(['quantity' => 'Insufficient stock for this transaction.']);
+            }
+            $item->quantity -= $validated['quantity'];
+            $item->save();
+        }
+
+        $validated['created_by'] = auth()->user()->id;
+        $validated['created_at'] = now();
+
+        ItemTransaction::create($validated);
+
+        return redirect()->route('transactions.index')->with('success', 'Transaction recorded successfully.');
+    }
     /**
      * Display the specified resource.
      *
