@@ -12,19 +12,11 @@ class Transfer extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'item_id',
         'from_inventory_id',
         'to_inventory_id',
-        'quantity',
         'created_by',
         'created_at',
     ];
-
-    // Relationships
-    public function item()
-    {
-        return $this->belongsTo(Item::class, 'item_id', 'item_id');
-    }
 
     public function fromInventory()
     {

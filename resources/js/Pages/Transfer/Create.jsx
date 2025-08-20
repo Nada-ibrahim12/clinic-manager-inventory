@@ -8,21 +8,32 @@ export default class Create extends Component {
         this.state = {
             fromInventory: "",
             toInventory: "",
-            transferDate: "",
+            transferDate: new Date().toISOString().split("T")[0], // Default to today
             items: [{ itemId: "", quantity: 1 }],
             loading: false,
+            errors: {},
         };
     }
 
     handleChange = (e) => {
-        this.setState({ [e.target.name]: e.target.value });
+        this.setState({
+            [e.target.name]: e.target.value,
+            errors: { ...this.state.errors, [e.target.name]: null },
+        });
     };
 
     handleItemChange = (index, e) => {
         const { name, value } = e.target;
         const items = [...this.state.items];
         items[index][name] = name === "quantity" ? parseInt(value) || 1 : value;
-        this.setState({ items });
+
+        // Clear item errors
+        const errors = { ...this.state.errors };
+        if (errors[`items.${index}.${name}`]) {
+            delete errors[`items.${index}.${name}`];
+        }
+
+        this.setState({ items, errors });
     };
 
     addItemRow = () => {
@@ -41,7 +52,7 @@ export default class Create extends Component {
 
     handleSubmit = (e) => {
         e.preventDefault();
-        this.setState({ loading: true });
+        this.setState({ loading: true, errors: {} });
 
         const transferData = {
             from_inventory_id: this.state.fromInventory,
@@ -49,18 +60,25 @@ export default class Create extends Component {
             transfer_date: this.state.transferDate,
             items: this.state.items.map((item) => ({
                 item_id: item.itemId,
-                quantity: item.quantity,
+                quantity: parseInt(item.quantity),
             })),
         };
 
         router.post("/transfer", transferData, {
             onFinish: () => this.setState({ loading: false }),
+            onSuccess: () => {
+                // Redirect to transfers index after successful creation
+                router.visit("/transfer");
+            },
+            onError: (errors) => {
+                this.setState({ errors });
+            },
         });
     };
 
     render() {
-        const { auth, inventories, items = [] } = this.props;
-        const { loading } = this.state;
+        const { auth, inventories, items } = this.props;
+        const { loading, errors } = this.state;
 
         return (
             <AuthenticatedLayout auth={auth}>
@@ -71,6 +89,12 @@ export default class Create extends Component {
                         <h2 className="text-2xl font-bold mb-6 text-gray-800">
                             Create Transfer
                         </h2>
+
+                        {errors.message && (
+                            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                                {errors.message}
+                            </div>
+                        )}
 
                         <form
                             onSubmit={this.handleSubmit}
@@ -93,11 +117,19 @@ export default class Create extends Component {
                                         -- Select Inventory --
                                     </option>
                                     {inventories?.map((inv) => (
-                                        <option key={inv.id} value={inv.id}>
+                                        <option
+                                            key={inv.inventory_id}
+                                            value={inv.inventory_id}
+                                        >
                                             {inv.name}
                                         </option>
                                     ))}
                                 </select>
+                                {errors.from_inventory_id && (
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.from_inventory_id}
+                                    </p>
+                                )}
                             </div>
 
                             {/* To Inventory */}
@@ -117,11 +149,19 @@ export default class Create extends Component {
                                         -- Select Inventory --
                                     </option>
                                     {inventories?.map((inv) => (
-                                        <option key={inv.id} value={inv.id}>
+                                        <option
+                                            key={inv.inventory_id}
+                                            value={inv.inventory_id}
+                                        >
                                             {inv.name}
                                         </option>
                                     ))}
                                 </select>
+                                {errors.to_inventory_id && (
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.to_inventory_id}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Transfer Date */}
@@ -138,6 +178,11 @@ export default class Create extends Component {
                                     required
                                     disabled={loading}
                                 />
+                                {errors.transfer_date && (
+                                    <p className="text-red-500 text-sm mt-1">
+                                        {errors.transfer_date}
+                                    </p>
+                                )}
                             </div>
 
                             {/* Multiple Items */}
@@ -145,6 +190,11 @@ export default class Create extends Component {
                                 <h3 className="text-lg font-semibold mb-3 text-gray-800">
                                     Items
                                 </h3>
+                                {errors.items && (
+                                    <p className="text-red-500 text-sm mb-2">
+                                        {errors.items}
+                                    </p>
+                                )}
                                 <div className="space-y-3">
                                     {this.state.items.map((item, index) => (
                                         <div
@@ -167,15 +217,26 @@ export default class Create extends Component {
                                                 <option value="">
                                                     -- Select Item --
                                                 </option>
-                                                {items.map((it) => (
+                                                {items?.map((it) => (
                                                     <option
-                                                        key={it.id}
-                                                        value={it.id}
+                                                        key={it.item_id}
+                                                        value={it.item_id}
                                                     >
                                                         {it.name}
                                                     </option>
                                                 ))}
                                             </select>
+                                            {errors[
+                                                `items.${index}.item_id`
+                                            ] && (
+                                                <p className="text-red-500 text-sm">
+                                                    {
+                                                        errors[
+                                                            `items.${index}.item_id`
+                                                        ]
+                                                    }
+                                                </p>
+                                            )}
 
                                             <input
                                                 type="number"
@@ -193,6 +254,17 @@ export default class Create extends Component {
                                                 required
                                                 disabled={loading}
                                             />
+                                            {errors[
+                                                `items.${index}.quantity`
+                                            ] && (
+                                                <p className="text-red-500 text-sm">
+                                                    {
+                                                        errors[
+                                                            `items.${index}.quantity`
+                                                        ]
+                                                    }
+                                                </p>
+                                            )}
 
                                             {this.state.items.length > 1 && (
                                                 <button

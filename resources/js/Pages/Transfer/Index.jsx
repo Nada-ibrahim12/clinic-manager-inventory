@@ -6,7 +6,9 @@ import Pagination from "@/Components/Pagination";
 export default function Index({ auth, errors, transfers = { data: [] } }) {
     const [searchTerm, setSearchTerm] = useState("");
 
-    const transferData = transfers?.data || transfers || [];
+    // Handle the paginated data structure
+    const transferData = transfers?.data || [];
+    const paginationLinks = transfers?.links || [];
 
     const filteredTransfers = transferData.filter(
         (t) =>
@@ -14,7 +16,9 @@ export default function Index({ auth, errors, transfers = { data: [] } }) {
             t.from_inventory
                 ?.toLowerCase()
                 .includes(searchTerm.toLowerCase()) ||
-            t.to_inventory?.toLowerCase().includes(searchTerm.toLowerCase())
+            t.to_inventory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            t.transfer_id?.toString().includes(searchTerm) ||
+            t.created_by_name?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -46,8 +50,8 @@ export default function Index({ auth, errors, transfers = { data: [] } }) {
                                 <div className="w-1/3">
                                     <input
                                         type="text"
-                                        placeholder="Search transfers..."
-                                        className="w-full border-gray-300 rounded-md shadow-sm"
+                                        placeholder="Search transfers by ID, item, inventory, or creator..."
+                                        className="w-full border-gray-300 rounded-md shadow-sm p-2"
                                         value={searchTerm}
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
@@ -62,16 +66,16 @@ export default function Index({ auth, errors, transfers = { data: [] } }) {
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                ID
+                                                Transfer ID
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Item
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                From
+                                                From Inventory
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                To
+                                                To Inventory
                                             </th>
                                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Quantity
@@ -89,7 +93,7 @@ export default function Index({ auth, errors, transfers = { data: [] } }) {
                                             filteredTransfers.map((t) => (
                                                 <tr key={t.transfer_id}>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {t.transfer_id}
+                                                        #{t.transfer_id}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                         {t.item_name}
@@ -119,7 +123,9 @@ export default function Index({ auth, errors, transfers = { data: [] } }) {
                                                     colSpan="7"
                                                     className="px-6 py-4 text-center text-sm text-gray-500"
                                                 >
-                                                    No transfers found
+                                                    {transferData.length === 0
+                                                        ? "No transfers found in the system"
+                                                        : "No transfers match your search criteria"}
                                                 </td>
                                             </tr>
                                         )}
@@ -127,11 +133,12 @@ export default function Index({ auth, errors, transfers = { data: [] } }) {
                                 </table>
                             </div>
 
-                            {/* Pagination */}
-                            <Pagination
-                                className="mt-6"
-                                links={transfers.links}
-                            />
+                            {paginationLinks.length > 0 && (
+                                <Pagination
+                                    className="mt-6"
+                                    links={paginationLinks}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
