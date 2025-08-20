@@ -9,11 +9,6 @@ use App\Models\Item;
 
 class ItemTransactionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         $transactions = ItemTransaction::with(['item', 'creator'])
@@ -38,77 +33,52 @@ class ItemTransactionController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
         return Inertia::render('Transactions/Create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'item_id' => 'required|exists:items,item_id',
             'quantity_change' => 'required|integer',
-            'transaction_type' => 'required|string|in:purchase,sale,adjustment',
-            'quantity' => 'required|integer|min:0',
+            'transaction_type' => 'required|in:in,out',
+            'quantity' => 'required|integer|min:1',
         ]);
 
-        $validated['created_by'] = auth()->user()->id;
-        $validated['created_at'] = now();
+        $validated['created_by'] = auth()->id();
 
         ItemTransaction::create($validated);
 
         return redirect()->route('transactions.index')->with('success', 'Transaction recorded successfully.');
     }
 
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function storeOutTransaction(Request $request)
     {
         $validated = $request->validate([
             'item_id' => 'required|exists:items,item_id',
             'quantity_change' => 'required|integer',
-            'transaction_type' => 'required|string|out:purchase,sale,adjustment',
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|integer|min:1',
         ]);
 
         $item = Item::findOrFail($validated['item_id']);
-        if ($item) {
-            if ($item->quantity < $validated['quantity']) {
-                return redirect()->back()->withErrors(['quantity' => 'Insufficient stock for this transaction.']);
-            }
-            $item->quantity -= $validated['quantity'];
-            $item->save();
+
+        if ($item->quantity < $validated['quantity']) {
+            return redirect()->back()->withErrors(['quantity' => 'Insufficient stock for this transaction.']);
         }
 
-        $validated['created_by'] = auth()->user()->id;
-        $validated['created_at'] = now();
+        $item->quantity -= $validated['quantity'];
+        $item->save();
+
+        $validated['created_by'] = auth()->id();
+        $validated['transaction_type'] = 'out';
 
         ItemTransaction::create($validated);
 
         return redirect()->route('transactions.index')->with('success', 'Transaction recorded successfully.');
     }
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show($id)
     {
         $transaction = ItemTransaction::with(['item', 'creator'])
@@ -116,39 +86,5 @@ class ItemTransactionController extends Controller
         return Inertia::render('Transactions/Show', [
             'transaction' => $transaction
         ]);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
     }
 }

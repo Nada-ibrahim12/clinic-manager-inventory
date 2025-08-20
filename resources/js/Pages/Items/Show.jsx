@@ -3,6 +3,11 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 
 export default function Show({ auth, errors, item }) {
+    const formatPrice = (price) => {
+        const num = parseFloat(price);
+        return isNaN(num) ? "0.00" : num.toFixed(2);
+    };
+
     return (
         <AuthenticatedLayout
             auth={auth}
@@ -43,7 +48,6 @@ export default function Show({ auth, errors, item }) {
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 bg-white border-b border-gray-200">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {/* Item Details */}
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-4">
                                         Basic Information
@@ -77,7 +81,6 @@ export default function Show({ auth, errors, item }) {
                                     </div>
                                 </div>
 
-                                {/* Inventory Details */}
                                 <div>
                                     <h3 className="text-lg font-medium text-gray-900 mb-4">
                                         Inventory Information
@@ -123,7 +126,9 @@ export default function Show({ auth, errors, item }) {
                                             </p>
                                             <p className="mt-1 text-sm text-gray-900">
                                                 $
-                                                {item.purchase_price.toFixed(2)}
+                                                {formatPrice(
+                                                    item.purchase_price
+                                                )}
                                             </p>
                                         </div>
                                         <div>
@@ -131,7 +136,10 @@ export default function Show({ auth, errors, item }) {
                                                 Selling Price
                                             </p>
                                             <p className="mt-1 text-sm text-gray-900">
-                                                ${item.selling_price.toFixed(2)}
+                                                $
+                                                {formatPrice(
+                                                    item.selling_price
+                                                )}
                                             </p>
                                         </div>
                                     </div>

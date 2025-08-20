@@ -7,18 +7,16 @@ use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
-    // Display all categories
     public function index()
     {
         $categories = ItemCategory::all();
         return response()->json($categories);
     }
 
-    // Store a new category
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:item_categories,name',
+            'category_name' => 'required|string|max:255|unique:item_categories,category_name',
             'description' => 'nullable|string',
         ]);
 
@@ -30,20 +28,18 @@ class CategoryController extends Controller
         ], 201);
     }
 
-    // Show a single category
     public function show($id)
     {
         $category = ItemCategory::findOrFail($id);
         return response()->json($category);
     }
 
-    // Update a category
     public function update(Request $request, $id)
     {
         $category = ItemCategory::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:item_categories,name,' . $id,
+            'category_name' => 'required|string|max:255|unique:item_categories,category_name,' . $id . ',category_id',
             'description' => 'nullable|string',
         ]);
 
@@ -55,7 +51,6 @@ class CategoryController extends Controller
         ]);
     }
 
-    // Delete a category
     public function destroy($id)
     {
         $category = ItemCategory::findOrFail($id);

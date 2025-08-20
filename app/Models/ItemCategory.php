@@ -9,7 +9,7 @@ class ItemCategory extends Model
 {
     protected $table = 'item_categories';
     protected $primaryKey = 'category_id';
-    protected $fillable = ['name', 'description'];
+    protected $fillable = ['category_name', 'description'];
 
     public function items()
     {

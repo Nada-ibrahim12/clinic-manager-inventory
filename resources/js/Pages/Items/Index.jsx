@@ -4,15 +4,20 @@ import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
 import Pagination from "@/Components/Pagination";
 
-export default function Index({ auth, errors, items = {data: []} }) {
+export default function Index({ auth, errors, items = { data: [] } }) {
     const [searchTerm, setSearchTerm] = useState("");
 
-    const itemData = items?.data || items || [];
+    const itemData = items?.data || [];
 
     const deleteItem = (id) => {
         if (confirm("Are you sure you want to delete this item?")) {
             router.delete(route("items.destroy", id));
         }
+    };
+
+    const formatPrice = (price) => {
+        const num = parseFloat(price);
+        return isNaN(num) ? "0.00" : num.toFixed(2);
     };
 
     const filteredItems = itemData.filter(
@@ -45,13 +50,12 @@ export default function Index({ auth, errors, items = {data: []} }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 bg-white border-b border-gray-200">
-                            {/* Search and Filters */}
                             <div className="mb-6 flex justify-between items-center">
                                 <div className="w-1/3">
                                     <input
                                         type="text"
                                         placeholder="Search items..."
-                                        className="w-full border-gray-300 rounded-md shadow-sm"
+                                        className="w-full border-gray-300 rounded-md shadow-sm p-2"
                                         value={searchTerm}
                                         onChange={(e) =>
                                             setSearchTerm(e.target.value)
@@ -60,7 +64,6 @@ export default function Index({ auth, errors, items = {data: []} }) {
                                 </div>
                             </div>
 
-                            {/* Items Table */}
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
@@ -88,7 +91,7 @@ export default function Index({ auth, errors, items = {data: []} }) {
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {filteredItems.length > 0 ? (
                                             filteredItems.map((item) => (
-                                                <tr key={item.id}>
+                                                <tr key={item.item_id}>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="flex items-center">
                                                             <div className="ml-4">
@@ -100,7 +103,12 @@ export default function Index({ auth, errors, items = {data: []} }) {
                                                                         0,
                                                                         50
                                                                     )}
-                                                                    ...
+                                                                    {item
+                                                                        .description
+                                                                        ?.length >
+                                                                    50
+                                                                        ? "..."
+                                                                        : ""}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -134,8 +142,8 @@ export default function Index({ auth, errors, items = {data: []} }) {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         $
-                                                        {item.selling_price.toFixed(
-                                                            2
+                                                        {formatPrice(
+                                                            item.selling_price
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -191,7 +199,9 @@ export default function Index({ auth, errors, items = {data: []} }) {
                                                     colSpan="6"
                                                     className="px-6 py-4 text-center text-sm text-gray-500"
                                                 >
-                                                    No items found
+                                                    {itemData.length === 0
+                                                        ? "No items found in system"
+                                                        : "No items match your search"}
                                                 </td>
                                             </tr>
                                         )}
@@ -199,8 +209,12 @@ export default function Index({ auth, errors, items = {data: []} }) {
                                 </table>
                             </div>
 
-                            {/* Pagination */}
-                            <Pagination className="mt-6" links={items.links} />
+                            {items.links && items.links.length > 1 && (
+                                <Pagination
+                                    className="mt-6"
+                                    links={items.links}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

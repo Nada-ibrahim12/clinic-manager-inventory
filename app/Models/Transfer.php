@@ -20,12 +20,12 @@ class Transfer extends Model
 
     public function fromInventory()
     {
-        return $this->belongsTo(Inventory::class, 'from_inventory_id', 'inventory_id');
+        return $this->belongsTo(Inventories::class, 'from_inventory_id', 'inventory_id');
     }
 
     public function toInventory()
     {
-        return $this->belongsTo(Inventory::class, 'to_inventory_id', 'inventory_id');
+        return $this->belongsTo(Inventories::class, 'to_inventory_id', 'inventory_id');
     }
 
     public function creator()
