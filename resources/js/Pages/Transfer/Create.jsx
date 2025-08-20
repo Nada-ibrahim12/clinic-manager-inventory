@@ -5,17 +5,34 @@ import { Head, router } from "@inertiajs/react";
 export default class Create extends Component {
     constructor(props) {
         super(props);
+
+        // Get user's assigned inventory ID (null if system admin)
+        const userInventoryId = props.auth?.user?.inventory_id || null;
+
+        // Set default from_inventory - non-admin users can only use their assigned inventory
+        const defaultFromInventory = props.auth?.user?.isSystemAdmin
+            ? ""
+            : userInventoryId;
+
         this.state = {
-            fromInventory: "",
-            toInventory: "",
-            transferDate: new Date().toISOString().split("T")[0], // Default to today
-            items: [{ itemId: "", quantity: 1 }],
+            from_inventory_id: defaultFromInventory,
+            to_inventory_id: "",
+            transfer_date: new Date().toISOString().split("T")[0],
+            items: [{ item_id: "", quantity: 1 }],
             loading: false,
             errors: {},
         };
     }
 
     handleChange = (e) => {
+        // For non-admin users, prevent changing from_inventory_id
+        if (
+            e.target.name === "from_inventory_id" &&
+            !this.props.auth?.user?.isSystemAdmin
+        ) {
+            return;
+        }
+
         this.setState({
             [e.target.name]: e.target.value,
             errors: { ...this.state.errors, [e.target.name]: null },
@@ -29,8 +46,8 @@ export default class Create extends Component {
 
         // Clear item errors
         const errors = { ...this.state.errors };
-        if (errors[`items.${index}.${name}`]) {
-            delete errors[`items.${index}.${name}`];
+        if (errors.items && errors.items[index]) {
+            delete errors.items[index];
         }
 
         this.setState({ items, errors });
@@ -38,7 +55,7 @@ export default class Create extends Component {
 
     addItemRow = () => {
         this.setState((prev) => ({
-            items: [...prev.items, { itemId: "", quantity: 1 }],
+            items: [...prev.items, { item_id: "", quantity: 1 }],
         }));
     };
 
@@ -46,7 +63,14 @@ export default class Create extends Component {
         const items = [...this.state.items];
         if (items.length > 1) {
             items.splice(index, 1);
-            this.setState({ items });
+
+            // Clear errors for removed item
+            const errors = { ...this.state.errors };
+            if (errors.items && errors.items[index]) {
+                delete errors.items[index];
+            }
+
+            this.setState({ items, errors });
         }
     };
 
@@ -55,11 +79,11 @@ export default class Create extends Component {
         this.setState({ loading: true, errors: {} });
 
         const transferData = {
-            from_inventory_id: this.state.fromInventory,
-            to_inventory_id: this.state.toInventory,
-            transfer_date: this.state.transferDate,
+            from_inventory_id: this.state.from_inventory_id,
+            to_inventory_id: this.state.to_inventory_id,
+            transfer_date: this.state.transfer_date,
             items: this.state.items.map((item) => ({
-                item_id: item.itemId,
+                item_id: item.item_id,
                 quantity: parseInt(item.quantity),
             })),
         };
@@ -67,7 +91,6 @@ export default class Create extends Component {
         router.post("/transfer", transferData, {
             onFinish: () => this.setState({ loading: false }),
             onSuccess: () => {
-                // Redirect to transfers index after successful creation
                 router.visit("/transfer");
             },
             onError: (errors) => {
@@ -77,8 +100,21 @@ export default class Create extends Component {
     };
 
     render() {
-        const { auth, inventories, items } = this.props;
+        const { auth, inventories = [], items = [] } = this.props;
         const { loading, errors } = this.state;
+
+        const isSystemAdmin = auth?.user?.isSystemAdmin || false;
+        const userInventoryId = auth?.user?.inventory_id || null;
+
+        // For non-admin users: only show their assigned inventory for "from"
+        const fromInventories = isSystemAdmin
+            ? inventories
+            : inventories.filter((inv) => inv.inventory_id === userInventoryId);
+
+        // For "to" inventory, show all except the source inventory
+        const toInventories = inventories.filter(
+            (inv) => inv.inventory_id !== this.state.from_inventory_id
+        );
 
         return (
             <AuthenticatedLayout auth={auth}>
@@ -100,31 +136,59 @@ export default class Create extends Component {
                             onSubmit={this.handleSubmit}
                             className="space-y-6"
                         >
-                            {/* From Inventory */}
+                            {/* From Inventory - Restricted for non-admin users */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     From Inventory
                                 </label>
-                                <select
-                                    name="fromInventory"
-                                    value={this.state.fromInventory}
-                                    onChange={this.handleChange}
-                                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
-                                    required
-                                    disabled={loading}
-                                >
-                                    <option value="">
-                                        -- Select Inventory --
-                                    </option>
-                                    {inventories?.map((inv) => (
-                                        <option
-                                            key={inv.inventory_id}
-                                            value={inv.inventory_id}
-                                        >
-                                            {inv.name}
+
+                                {isSystemAdmin ? (
+                                    // Admin can choose any inventory
+                                    <select
+                                        name="from_inventory_id"
+                                        value={this.state.from_inventory_id}
+                                        onChange={this.handleChange}
+                                        className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
+                                        required
+                                        disabled={loading}
+                                    >
+                                        <option value="">
+                                            -- Select Inventory --
                                         </option>
-                                    ))}
-                                </select>
+                                        {fromInventories.map((inv) => (
+                                            <option
+                                                key={inv.inventory_id}
+                                                value={inv.inventory_id}
+                                            >
+                                                {inv.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                ) : (
+                                    // Non-admin users see their assigned inventory as read-only
+                                    <div>
+                                        <input
+                                            type="text"
+                                            value={
+                                                fromInventories[0]?.name ||
+                                                "Your Inventory"
+                                            }
+                                            className="w-full border-gray-300 rounded-lg shadow-sm bg-gray-100 p-3"
+                                            readOnly
+                                            disabled
+                                        />
+                                        <input
+                                            type="hidden"
+                                            name="from_inventory_id"
+                                            value={this.state.from_inventory_id}
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            You can only transfer from your
+                                            assigned inventory
+                                        </p>
+                                    </div>
+                                )}
+
                                 {errors.from_inventory_id && (
                                     <p className="text-red-500 text-sm mt-1">
                                         {errors.from_inventory_id}
@@ -138,17 +202,19 @@ export default class Create extends Component {
                                     To Inventory
                                 </label>
                                 <select
-                                    name="toInventory"
-                                    value={this.state.toInventory}
+                                    name="to_inventory_id"
+                                    value={this.state.to_inventory_id}
                                     onChange={this.handleChange}
                                     className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
                                     required
-                                    disabled={loading}
+                                    disabled={
+                                        loading || toInventories.length === 0
+                                    }
                                 >
                                     <option value="">
                                         -- Select Inventory --
                                     </option>
-                                    {inventories?.map((inv) => (
+                                    {toInventories.map((inv) => (
                                         <option
                                             key={inv.inventory_id}
                                             value={inv.inventory_id}
@@ -157,6 +223,12 @@ export default class Create extends Component {
                                         </option>
                                     ))}
                                 </select>
+                                {toInventories.length === 0 && (
+                                    <p className="text-sm text-yellow-600 mt-1">
+                                        No other inventories available for
+                                        transfer
+                                    </p>
+                                )}
                                 {errors.to_inventory_id && (
                                     <p className="text-red-500 text-sm mt-1">
                                         {errors.to_inventory_id}
@@ -171,8 +243,8 @@ export default class Create extends Component {
                                 </label>
                                 <input
                                     type="date"
-                                    name="transferDate"
-                                    value={this.state.transferDate}
+                                    name="transfer_date"
+                                    value={this.state.transfer_date}
                                     onChange={this.handleChange}
                                     className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
                                     required
@@ -190,81 +262,86 @@ export default class Create extends Component {
                                 <h3 className="text-lg font-semibold mb-3 text-gray-800">
                                     Items
                                 </h3>
-                                {errors.items && (
-                                    <p className="text-red-500 text-sm mb-2">
-                                        {errors.items}
-                                    </p>
-                                )}
+                                {errors.items &&
+                                    typeof errors.items === "string" && (
+                                        <p className="text-red-500 text-sm mb-2">
+                                            {errors.items}
+                                        </p>
+                                    )}
                                 <div className="space-y-3">
                                     {this.state.items.map((item, index) => (
                                         <div
                                             key={index}
                                             className="flex items-center gap-4"
                                         >
-                                            <select
-                                                name="itemId"
-                                                value={item.itemId}
-                                                onChange={(e) =>
-                                                    this.handleItemChange(
-                                                        index,
-                                                        e
-                                                    )
-                                                }
-                                                className="flex-1 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
-                                                required
-                                                disabled={loading}
-                                            >
-                                                <option value="">
-                                                    -- Select Item --
-                                                </option>
-                                                {items?.map((it) => (
-                                                    <option
-                                                        key={it.item_id}
-                                                        value={it.item_id}
-                                                    >
-                                                        {it.name}
+                                            <div className="flex-1">
+                                                <select
+                                                    name="item_id"
+                                                    value={item.item_id}
+                                                    onChange={(e) =>
+                                                        this.handleItemChange(
+                                                            index,
+                                                            e
+                                                        )
+                                                    }
+                                                    className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
+                                                    required
+                                                    disabled={loading}
+                                                >
+                                                    <option value="">
+                                                        -- Select Item --
                                                     </option>
-                                                ))}
-                                            </select>
-                                            {errors[
-                                                `items.${index}.item_id`
-                                            ] && (
-                                                <p className="text-red-500 text-sm">
-                                                    {
-                                                        errors[
-                                                            `items.${index}.item_id`
-                                                        ]
-                                                    }
-                                                </p>
-                                            )}
+                                                    {items.map((it) => (
+                                                        <option
+                                                            key={it.item_id}
+                                                            value={it.item_id}
+                                                        >
+                                                            {it.name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {errors.items &&
+                                                    errors.items[index]
+                                                        ?.item_id && (
+                                                        <p className="text-red-500 text-sm mt-1">
+                                                            {
+                                                                errors.items[
+                                                                    index
+                                                                ].item_id
+                                                            }
+                                                        </p>
+                                                    )}
+                                            </div>
 
-                                            <input
-                                                type="number"
-                                                name="quantity"
-                                                placeholder="Qty"
-                                                value={item.quantity}
-                                                min="1"
-                                                onChange={(e) =>
-                                                    this.handleItemChange(
-                                                        index,
-                                                        e
-                                                    )
-                                                }
-                                                className="w-28 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
-                                                required
-                                                disabled={loading}
-                                            />
-                                            {errors[
-                                                `items.${index}.quantity`
-                                            ] && (
-                                                <p className="text-red-500 text-sm">
-                                                    {
-                                                        errors[
-                                                            `items.${index}.quantity`
-                                                        ]
+                                            <div>
+                                                <input
+                                                    type="number"
+                                                    name="quantity"
+                                                    placeholder="Qty"
+                                                    value={item.quantity}
+                                                    min="1"
+                                                    onChange={(e) =>
+                                                        this.handleItemChange(
+                                                            index,
+                                                            e
+                                                        )
                                                     }
-                                                </p>
-                                            )}
+                                                    className="w-28 border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
+                                                    required
+                                                    disabled={loading}
+                                                />
+                                                {errors.items &&
+                                                    errors.items[index]
+                                                        ?.quantity && (
+                                                        <p className="text-red-500 text-sm mt-1">
+                                                            {
+                                                                errors.items[
+                                                                    index
+                                                                ].quantity
+                                                            }
+                                                        </p>
+                                                    )}
+                                            </div>
 
                                             {this.state.items.length > 1 && (
                                                 <button
@@ -299,7 +376,11 @@ export default class Create extends Component {
                                 <button
                                     type="submit"
                                     className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow disabled:bg-gray-400"
-                                    disabled={loading}
+                                    disabled={
+                                        loading ||
+                                        !this.state.from_inventory_id ||
+                                        !this.state.to_inventory_id
+                                    }
                                 >
                                     {loading ? "Saving..." : "Save Transfer"}
                                 </button>

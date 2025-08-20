@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use App\Models\Inventories;
 use App\Models\Item;
+use App\Models\User; // ADD THIS IMPORT
 
 class TransferController extends Controller
 {
@@ -29,7 +30,7 @@ class TransferController extends Controller
                 'users.name as created_by_name'
             )
             ->orderBy('transfer_transactions.created_at', 'desc')
-            ->paginate(10);
+            ->paginate(100);
 
         return Inertia::render('Transfer/Index', [
             'auth' => ['user' => auth()->user()],
@@ -39,6 +40,13 @@ class TransferController extends Controller
 
     public function create()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        $accessibleInventories = Inventories::when(!$user->isSystemAdmin(), function ($query) use ($user) {
+            return $query->where('inventory_id', $user->getInventoryId());
+        })->get();
+
         $inventories = Inventories::all();
         $items = Item::all();
 
@@ -46,113 +54,138 @@ class TransferController extends Controller
             'auth' => [
                 'user' => auth()->user(),
             ],
-            'inventories' => $inventories,
+            'from_inventories' => $accessibleInventories,
+            'to_inventories' => $inventories,
             'items' => $items,
         ]);
     }
 
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $validated = $request->validate([
-            'from_inventory_id' => 'required|exists:inventories,inventory_id',
-            'to_inventory_id' => 'required|exists:inventories,inventory_id|different:from_inventory_id',
+            'from_inventory_id' => [
+                'required',
+                'exists:inventories,inventory_id',
+                function ($attribute, $value, $fail) use ($user) {
+                    if (!$user->canAccessInventory($value)) {
+                        $fail('You do not have access to transfer from this inventory.');
+                    }
+                }
+            ],
+            'to_inventory_id' => [
+                'required',
+                'exists:inventories,inventory_id',
+                'different:from_inventory_id',
+                function ($attribute, $value, $fail) use ($user) {
+                    if (!$user->isSystemAdmin() && !$user->canAccessInventory($value)) {
+                        $fail('You do not have access to transfer to this inventory.');
+                    }
+                }
+            ],
             'transfer_date' => 'required|date',
             'items' => 'required|array|min:1',
             'items.*.item_id' => 'required|exists:items,item_id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
+        if (!$user->canAccessInventory($validated['from_inventory_id'])) {
+            return response()->json([
+                'message' => 'Unauthorized: You can only transfer from your assigned inventory'
+            ], 403);
+        }
+
         $userId = Auth::id();
 
-        return DB::transaction(function () use ($validated, $userId) {
-            // Create the main transfer transaction
-            $transferId = DB::table('transfer_transactions')->insertGetId([
-                'from_inventory_id' => $validated['from_inventory_id'],
-                'to_inventory_id' => $validated['to_inventory_id'],
-                'created_by' => $userId,
-                'created_at' => $validated['transfer_date'],
-            ]);
+        try {
+            return DB::transaction(function () use ($validated, $userId) {
+                $transferId = DB::table('transfer_transactions')->insertGetId([
+                    'from_inventory_id' => $validated['from_inventory_id'],
+                    'to_inventory_id' => $validated['to_inventory_id'],
+                    'created_by' => $userId,
+                    'created_at' => $validated['transfer_date'],
+                ]);
 
-            // Process each item in the transfer
-            foreach ($validated['items'] as $item) {
-                $itemId = $item['item_id'];
-                $quantity = $item['quantity'];
+                foreach ($validated['items'] as $item) {
+                    $itemId = $item['item_id'];
+                    $quantity = $item['quantity'];
 
-                // Check stock from source inventory
-                $fromStock = DB::table('inventory')
-                    ->where('inventory_id', $validated['from_inventory_id'])
-                    ->where('item_id', $itemId)
-                    ->lockForUpdate()
-                    ->first();
+                    $fromStock = DB::table('inventory_stock')
+                        ->where('inventory_id', $validated['from_inventory_id'])
+                        ->where('item_id', $itemId)
+                        ->lockForUpdate()
+                        ->first();
 
-                if (!$fromStock || $fromStock->quantity < $quantity) {
-                    throw new \Exception("Not enough stock for item ID {$itemId} in source inventory");
-                }
+                    if (!$fromStock || $fromStock->quantity < $quantity) {
+                        throw new \Exception("Not enough stock for item ID {$itemId} in source inventory");
+                    }
 
-                // Deduct from source inventory
-                DB::table('inventory')
-                    ->where('inventory_id', $fromStock->inventory_id)
-                    ->update([
-                        'quantity' => $fromStock->quantity - $quantity,
-                        'last_updated' => now(),
-                    ]);
-
-                // Add to destination inventory
-                $toStock = DB::table('inventory')
-                    ->where('inventory_id', $validated['to_inventory_id'])
-                    ->where('item_id', $itemId)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($toStock) {
-                    DB::table('inventory')
-                        ->where('inventory_id', $toStock->inventory_id)
+                    DB::table('inventory_stock')
+                        ->where('stock_id', $fromStock->stock_id)
                         ->update([
-                            'quantity' => $toStock->quantity + $quantity,
+                            'quantity' => $fromStock->quantity - $quantity,
                             'last_updated' => now(),
                         ]);
-                } else {
-                    DB::table('inventory')->insert([
-                        'inventory_id' => $validated['to_inventory_id'],
+
+                    $toStock = DB::table('inventory_stock')
+                        ->where('inventory_id', $validated['to_inventory_id'])
+                        ->where('item_id', $itemId)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($toStock) {
+                        DB::table('inventory_stock')
+                            ->where('stock_id', $toStock->stock_id)
+                            ->update([
+                                'quantity' => $toStock->quantity + $quantity,
+                                'last_updated' => now(),
+                            ]);
+                    } else {
+                        DB::table('inventory_stock')->insert([
+                            'inventory_id' => $validated['to_inventory_id'],
+                            'item_id' => $itemId,
+                            'quantity' => $quantity,
+                            'last_updated' => now(),
+                        ]);
+                    }
+
+                    DB::table('items_transfered')->insert([
+                        'transfer_id' => $transferId,
                         'item_id' => $itemId,
                         'quantity' => $quantity,
-                        'last_updated' => now(),
+                    ]);
+
+                    DB::table('item_transactions')->insert([
+                        'item_id' => $itemId,
+                        'quantity_change' => -$quantity,
+                        'created_by' => $userId,
+                        'transaction_type' => 'out',
+                        'quantity' => $quantity,
+                        'created_at' => $validated['transfer_date'],
+                    ]);
+
+                    DB::table('item_transactions')->insert([
+                        'item_id' => $itemId,
+                        'quantity_change' => $quantity,
+                        'created_by' => $userId,
+                        'transaction_type' => 'in',
+                        'quantity' => $quantity,
+                        'created_at' => $validated['transfer_date'],
                     ]);
                 }
 
-                // Record the item transfer in items_transfered table
-                DB::table('items_transfered')->insert([
-                    'transfer_id' => $transferId,
-                    'item_id' => $itemId,
-                    'quantity' => $quantity,
-                ]);
-
-                // Create OUT transaction for source inventory
-                DB::table('item_transactions')->insert([
-                    'item_id' => $itemId,
-                    'quantity_change' => -$quantity, // Negative for outbound
-                    'created_by' => $userId,
-                    'transaction_type' => 'out',
-                    'quantity' => $quantity,
-                    'created_at' => $validated['transfer_date'],
-                ]);
-
-                // Create IN transaction for destination inventory
-                DB::table('item_transactions')->insert([
-                    'item_id' => $itemId,
-                    'quantity_change' => $quantity, // Positive for inbound
-                    'created_by' => $userId,
-                    'transaction_type' => 'in',
-                    'quantity' => $quantity,
-                    'created_at' => $validated['transfer_date'],
-                ]);
-            }
-
+                return response()->json([
+                    'message' => 'Transfer created successfully',
+                    'transfer_id' => $transferId
+                ], 201);
+            });
+        } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Transfer created successfully',
-                'transfer_id' => $transferId
-            ], 201);
-        });
+                'message' => 'Transfer failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function show($id)
