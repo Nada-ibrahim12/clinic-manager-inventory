@@ -100,7 +100,13 @@ export default class Create extends Component {
     };
 
     render() {
-        const { auth, inventories = [], items = [] } = this.props;
+        // CHANGE THIS LINE: Use the correct props from backend
+        const {
+            auth,
+            from_inventories = [],
+            to_inventories = [],
+            items = [],
+        } = this.props;
         const { loading, errors } = this.state;
 
         const isSystemAdmin = auth?.user?.isSystemAdmin || false;
@@ -108,11 +114,13 @@ export default class Create extends Component {
 
         // For non-admin users: only show their assigned inventory for "from"
         const fromInventories = isSystemAdmin
-            ? inventories
-            : inventories.filter((inv) => inv.inventory_id === userInventoryId);
+            ? from_inventories
+            : from_inventories.filter(
+                  (inv) => inv.inventory_id === userInventoryId
+              );
 
-        // For "to" inventory, show all except the source inventory
-        const toInventories = inventories.filter(
+        // For "to" inventory, filter out the source inventory
+        const toInventories = to_inventories.filter(
             (inv) => inv.inventory_id !== this.state.from_inventory_id
         );
 
@@ -207,9 +215,7 @@ export default class Create extends Component {
                                     onChange={this.handleChange}
                                     className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-3"
                                     required
-                                    disabled={
-                                        loading || toInventories.length === 0
-                                    }
+                                    disabled={loading}
                                 >
                                     <option value="">
                                         -- Select Inventory --
@@ -223,12 +229,6 @@ export default class Create extends Component {
                                         </option>
                                     ))}
                                 </select>
-                                {toInventories.length === 0 && (
-                                    <p className="text-sm text-yellow-600 mt-1">
-                                        No other inventories available for
-                                        transfer
-                                    </p>
-                                )}
                                 {errors.to_inventory_id && (
                                     <p className="text-red-500 text-sm mt-1">
                                         {errors.to_inventory_id}

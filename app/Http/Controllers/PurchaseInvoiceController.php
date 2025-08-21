@@ -9,161 +9,230 @@ use App\Models\PurchaseInvoice;
 use App\Models\Item;
 use App\Models\PurchaseInvoiceItem;
 use App\Models\ItemTransaction;
+use App\Models\InventoryStock;
+use Illuminate\Support\Facades\Auth;
 
 class PurchaseInvoiceController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
-        $invoices = PurchaseInvoice::with('supplier')->paginate(100);
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->isSystemAdmin()) {
+            // Admin sees all invoices
+            $invoices = PurchaseInvoice::with('supplier', 'inventory')->paginate(100);
+        } else {
+            // Staff only sees invoices for their inventory
+            $invoices = PurchaseInvoice::with('supplier', 'inventory')
+                ->where('inventory_id', $user->inventory_id)
+                ->paginate(100);
+        }
+
         return Inertia::render('PurchaseInvoices/Index', [
             'invoices' => $invoices,
+            'isAdmin' => $user->isSystemAdmin(),
         ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         $suppliers = DB::table('suppliers')
             ->select('supplier_id', 'name')
             ->get();
+
         $items = Item::all();
+
+        // Get inventories based on user role
+        $inventories = $user->isSystemAdmin()
+            ? DB::table('inventories')->select('inventory_id', 'name')->get()
+            : DB::table('inventories')->where('inventory_id', $user->inventory_id)->get();
+
         return Inertia::render('PurchaseInvoices/Create', [
             'suppliers' => $suppliers,
             'items' => $items,
+            'inventories' => $inventories,
+            'defaultInventory' => $user->isSystemAdmin() ? null : $user->inventory_id,
+            'isAdmin' => $user->isSystemAdmin(),
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,supplier_id',
             'invoice_date' => 'required|date',
             'total_amount' => 'required|numeric|min:0',
             'status' => 'required|in:pending,paid,cancelled',
+            'inventory_id' => [
+                'required',
+                'exists:inventories,inventory_id',
+                function ($attribute, $value, $fail) use ($user) {
+                    if (!$user->canAccessInventory($value)) {
+                        $fail('You do not have permission to create invoices for this inventory.');
+                    }
+                }
+            ],
         ]);
 
-        $validated['created_by'] = auth()->user()->id;
+        // For staff users, ensure they can only create invoices for their inventory
+        if ($user->isStaff() && $validated['inventory_id'] != $user->inventory_id) {
+            return redirect()->back()->withErrors([
+                'inventory_id' => 'You can only create invoices for your assigned inventory.'
+            ]);
+        }
 
-        // $this->storeInvoiceItems($request->invoice_items, $validated['invoice_number']);
+        $validated['created_by'] = $user->id;
         $invoice = PurchaseInvoice::create($validated);
-        $this->storeInvoiceItems($invoice->invoice_number, $request->invoice_items);
+        $this->storeInvoiceItems($invoice->invoice_number, $request->invoice_items, $validated['inventory_id']);
 
         return redirect()->route('purchase-invoices.index')->with('success', 'Purchase Invoice created successfully');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    private function storeInvoiceItems($invoiceNumber, $items)
+    private function storeInvoiceItems($invoiceNumber, $items, $inventoryId)
     {
         foreach ($items as $item) {
             PurchaseInvoiceItem::create([
                 'purchase_invoice_id' => $invoiceNumber,
                 'item_id'        => $item['item_id'],
                 'quantity'       => $item['quantity'],
-                'unit_price'          => $item['unit_price'],
+                'unit_price'     => $item['unit_price'],
             ]);
-            $inventoryItem = Item::find($item['item_id']);
-            if ($inventoryItem) {
-                $inventoryItem->quantity += $item['quantity'];
-                $inventoryItem->save();
 
-                ItemTransaction::create([
-                    'item_id' => $item['item_id'],
-                    'transaction_type' => 'in',
-                    'quantity_change' => $item['quantity'],
-                    'created_by' => auth()->user()->id,
-                    'quantity' => $inventoryItem->quantity,
-                ]);
-            }
+            // Update inventory stock instead of global item quantity
+            $this->updateInventoryStock($item['item_id'], $inventoryId, $item['quantity']);
+
+            // Create transaction record
+            ItemTransaction::create([
+                'item_id' => $item['item_id'],
+                'transaction_type' => 'in',
+                'quantity_change' => $item['quantity'],
+                'created_by' => auth()->user()->id,
+                'quantity' => $this->getCurrentStock($item['item_id'], $inventoryId),
+                'inventory_id' => $inventoryId, // Make sure your transactions table has this column
+            ]);
         }
     }
 
+    private function updateInventoryStock($itemId, $inventoryId, $quantity)
+    {
+        $stock = InventoryStock::firstOrNew([
+            'item_id' => $itemId,
+            'inventory_id' => $inventoryId
+        ]);
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+        $stock->quantity += $quantity;
+        $stock->save();
+    }
+
+    private function getCurrentStock($itemId, $inventoryId)
+    {
+        $stock = InventoryStock::where('item_id', $itemId)
+            ->where('inventory_id', $inventoryId)
+            ->first();
+
+        return $stock ? $stock->quantity : 0;
+    }
+
     public function show($id)
     {
-        $invoice = PurchaseInvoice::with(['supplier', 'items.item'])->findOrFail($id);
+        $invoice = PurchaseInvoice::with(['supplier', 'items.item', 'inventory'])->findOrFail($id);
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Check if user has access to this invoice's inventory
+        if (!$user->canAccessInventory($invoice->inventory_id)) {
+            abort(403, 'Unauthorized access to this invoice.');
+        }
+
         return Inertia::render('PurchaseInvoices/Show', [
             'invoice' => $invoice,
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
         $invoice = PurchaseInvoice::with('supplier')->findOrFail($id);
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Check if user has access to this invoice's inventory
+        if (!$user->canAccessInventory($invoice->inventory_id)) {
+            abort(403, 'Unauthorized access to this invoice.');
+        }
+
         $suppliers = DB::table('suppliers')
             ->select('supplier_id', 'name')
             ->get();
+
+        // Get inventories based on user role
+        $inventories = $user->isSystemAdmin()
+            ? DB::table('inventories')->select('inventory_id', 'name')->get()
+            : DB::table('inventories')->where('inventory_id', $user->inventory_id)->get();
+
         return Inertia::render('PurchaseInvoices/Edit', [
             'invoice' => $invoice,
             'suppliers' => $suppliers,
+            'inventories' => $inventories,
+            'isAdmin' => $user->isSystemAdmin(),
         ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
         $invoice = PurchaseInvoice::findOrFail($id);
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Check if user has access to this invoice's inventory
+        if (!$user->canAccessInventory($invoice->inventory_id)) {
+            abort(403, 'Unauthorized access to this invoice.');
+        }
+
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,supplier_id',
-            'created_by' => 'required|exists:users,id',
             'invoice_date' => 'required|date',
             'total_amount' => 'required|numeric|min:0',
             'status' => 'required|in:pending,paid,cancelled',
-            'updated_at' => 'required|date',
+            'inventory_id' => [
+                'required',
+                'exists:inventories,inventory_id',
+                function ($attribute, $value, $fail) use ($user) {
+                    if (!$user->canAccessInventory($value)) {
+                        $fail('You do not have permission to move invoices to this inventory.');
+                    }
+                }
+            ],
         ]);
+
+        // For staff users, ensure they can only keep invoices in their inventory
+        if ($user->isStaff() && $validated['inventory_id'] != $user->inventory_id) {
+            return redirect()->back()->withErrors([
+                'inventory_id' => 'You can only keep invoices in your assigned inventory.'
+            ]);
+        }
 
         $invoice->update($validated);
         return redirect()->route('purchase-invoices.index')->with('success', 'Purchase Invoice updated successfully');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         $invoice = PurchaseInvoice::findOrFail($id);
-        $invoice->delete();
+       /** @var \App\Models\User $user */
+        $user = Auth::user();
 
+        // Check if user has access to this invoice's inventory
+        if (!$user->canAccessInventory($invoice->inventory_id)) {
+            abort(403, 'Unauthorized access to this invoice.');
+        }
+
+        $invoice->delete();
         return redirect()->route('purchase-invoices.index')->with('success', 'Purchase Invoice deleted successfully');
     }
 }

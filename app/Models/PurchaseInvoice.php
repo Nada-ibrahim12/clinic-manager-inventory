@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Inventories;
 
 class PurchaseInvoice extends Model
 {
@@ -14,7 +15,7 @@ class PurchaseInvoice extends Model
 
     public $timestamps = false;
 
-    protected $fillable = ['supplier_id', 'invoice_date', 'total_amount', 'created_by'];
+    protected $fillable = ['supplier_id', 'invoice_date', 'total_amount', 'created_by', 'inventory_id'];
 
     public function supplier()
     {
@@ -29,5 +30,9 @@ class PurchaseInvoice extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+    public function inventory()
+    {
+        return $this->belongsTo(Inventories::class, 'inventory_id');
     }
 }

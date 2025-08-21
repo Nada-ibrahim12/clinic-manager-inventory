@@ -93,4 +93,9 @@ class User extends Authenticatable
 
         return $this->inventory_id == $inventoryId;
     }
+
+    public function isStaff()
+    {
+        return $this->role === 'staff';
+    }
 }

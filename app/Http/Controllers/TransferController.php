@@ -43,19 +43,19 @@ class TransferController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        $accessibleInventories = Inventories::when(!$user->isSystemAdmin(), function ($query) use ($user) {
-            return $query->where('inventory_id', $user->getInventoryId());
-        })->get();
+        $fromInventories = $user->isSystemAdmin()
+            ? Inventories::all()
+            : Inventories::where('inventory_id', $user->inventory_id)->get();
 
-        $inventories = Inventories::all();
+        $toInventories = Inventories::all();
         $items = Item::all();
 
         return Inertia::render('Transfer/Create', [
             'auth' => [
                 'user' => auth()->user(),
             ],
-            'from_inventories' => $accessibleInventories,
-            'to_inventories' => $inventories,
+            'from_inventories' => $fromInventories,
+            'to_inventories' => $toInventories,
             'items' => $items,
         ]);
     }
@@ -79,11 +79,6 @@ class TransferController extends Controller
                 'required',
                 'exists:inventories,inventory_id',
                 'different:from_inventory_id',
-                function ($attribute, $value, $fail) use ($user) {
-                    if (!$user->isSystemAdmin() && !$user->canAccessInventory($value)) {
-                        $fail('You do not have access to transfer to this inventory.');
-                    }
-                }
             ],
             'transfer_date' => 'required|date',
             'items' => 'required|array|min:1',
@@ -176,10 +171,7 @@ class TransferController extends Controller
                     ]);
                 }
 
-                return response()->json([
-                    'message' => 'Transfer created successfully',
-                    'transfer_id' => $transferId
-                ], 201);
+                return redirect()->route('transfer.index')->with('success', 'Transfer created successfully');
             });
         } catch (\Exception $e) {
             return response()->json([
