@@ -66,6 +66,22 @@ clinic-manager-inventory/
 │── README.md                 # Project documentation
 ```
 
+### 🛠️ Technical Topics Covered
+
+* **Full-Stack Development** → Backend with **Laravel 11** + Frontend with **React 18**
+* **RESTful API Design** → Authentication, inventory, suppliers, transactions, invoices
+* **Role-Based Access Control (RBAC)** → Implemented via middleware & policies
+* **Database Schema Design** → Relational model with MySQL (items, suppliers, transactions, invoices, users)
+* **Eloquent ORM** → Efficient data handling with relationships & eager loading
+* **State Management in React** → Context API / custom hooks for global data flow
+* **Reusable UI Components** → Built with React + TailwindCSS / Bootstrap
+* **Form Handling & Validation** → Laravel validation + React form management
+* **Error Handling & Notifications** → Backend exceptions + frontend alerts/toasts
+* **Authentication & Security** → JWT authentication, CSRF protection, hashed passwords
+* **Logging & Auditing** → Laravel logs + admin audit trail of user actions
+* **Deployment & Environments** → `.env` configuration, Laravel Artisan, database migrations
+* **Version Control** → Git branching strategy for team collaboration
+
 ---
 
 ## ⚙️ Tech Stack
