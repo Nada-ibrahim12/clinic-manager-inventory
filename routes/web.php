@@ -75,6 +75,9 @@ Route::middleware(['auth'])->group(function () {
 
     // Transfer
     Route::resource('transfer', TransferController::class);
+
+    Route::post('/items/{id}/add-stock', [ItemController::class, 'addStock'])->name('items.add-stock');
+    Route::post('/items/{id}/remove-stock', [ItemController::class, 'removeStock'])->name('items.remove-stock');
 });
 
 // Auth routes

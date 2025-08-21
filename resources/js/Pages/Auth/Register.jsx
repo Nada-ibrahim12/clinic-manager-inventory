@@ -12,6 +12,8 @@ export default function Register() {
         email: "",
         password: "",
         password_confirmation: "",
+        role: "",
+        inventory_id: ""
     });
 
     useEffect(() => {
@@ -73,6 +75,65 @@ export default function Register() {
                         className="mt-1 text-sm"
                     />
                 </div>
+
+                <div>
+                    <InputLabel
+                        htmlFor="role"
+                        value="Role"
+                        className="text-gray-700 mb-1"
+                    />
+                    <select
+                        id="role"
+                        name="role"
+                        value={data.role}
+                        onChange={(e) => setData("role", e.target.value)}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
+                        required
+                    >
+                        <option value="admin">System Administrator</option>
+                        <option value="staff">Inventory Admin</option>
+                    </select>
+                    <InputError
+                        message={errors.role}
+                        className="mt-1 text-sm"
+                    />
+                </div>
+
+                {data.role !== "admin" && (
+                    <div>
+                        <InputLabel
+                            htmlFor="inventory_id"
+                            value="Assigned Inventory"
+                            className="text-gray-700 mb-1"
+                        />
+                        <select
+                            id="inventory_id"
+                            name="inventory_id"
+                            value={data.inventory_id}
+                            onChange={(e) =>
+                                setData("inventory_id", e.target.value)
+                            }
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 transition"
+                            required={data.role !== "admin"}
+                        >
+                            <option value="">-- Select Inventory --</option>
+                            <option value="1">Main Inventory</option>
+                            <option value="2">Warehouse</option>
+                            <option value="3">Clinic Stock</option>
+                            <option value="4">Emergency Storage</option>
+                        </select>
+                        <InputError
+                            message={errors.inventory_id}
+                            className="mt-1 text-sm"
+                        />
+                        {data.role === "admin" && (
+                            <p className="text-sm text-gray-500 mt-1">
+                                System administrators don't need inventory
+                                assignment
+                            </p>
+                        )}
+                    </div>
+                )}
 
                 <div>
                     <InputLabel

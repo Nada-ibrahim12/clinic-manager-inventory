@@ -133,4 +133,10 @@ class Item extends Model
     {
         return $this->selling_price - $this->purchase_price;
     }
+
+    public function stocks()
+    {
+        return $this->hasMany(InventoryStock::class, 'item_id');
+    }
+
 }
